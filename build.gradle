@@ -1,0 +1,44 @@
+
+//# frameworks/base/build.gradle
+
+apply plugin: 'java'
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'core/java'
+            srcDirs 'graphics/java'
+            srcDirs 'services/core'
+        }
+    }
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+buildscript {
+
+    repositories {
+        maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
+        google()
+        jcenter()
+
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.0.1'
+    }
+}
+
+allprojects {
+    repositories {
+        maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
+        google()
+        jcenter()
+
+    }
+}
+
+wrapper() {
+
+    distributionUrl = 'https://services.gradle.org/distributions/gradle-5.6.1-all.zip'
+}
