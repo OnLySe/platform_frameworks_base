@@ -348,6 +348,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     /**
      * This view will get focus only if none of its descendants want it.
+     *
+     * 仅当此视图的后代都不需要它时，它才会获得焦点。
      */
     public static final int FOCUS_AFTER_DESCENDANTS = 0x40000;
 

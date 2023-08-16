@@ -2312,10 +2312,17 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         }
     }
 
+    /**
+     *
+     * @param featureId 特征ID
+     * @return
+     */
     protected DecorView generateDecor(int featureId) {
         // System process doesn't have application context and in that case we need to directly use
         // the context we have. Otherwise we want the application context, so we don't cling to the
         // activity.
+        //系统进程没有应用程序上下文，在这种情况下，我们需要直接使用我们拥有的上下文。否则，我们需要应用程序上下文，
+        // 因此我们不会紧紧抓住activity。
         Context context;
         if (mUseDecorContext) {
             Context applicationContext = getContext().getApplicationContext();
@@ -2562,6 +2569,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
 
         // Inflate the window decor.
 
+        //待加载的布局资源id
         int layoutResource;
         int features = getLocalFeatures();
         // System.out.println("Features: 0x" + Integer.toHexString(features));
@@ -2678,10 +2686,14 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         mAlwaysReadCloseOnTouchAttr = true;
     }
 
+    /**
+     * 初始化 mDecor和mContentParent 两个变量
+     */
     private void installDecor() {
         mForceDecorInstall = false;
         if (mDecor == null) {
             mDecor = generateDecor(-1);
+            //在得到 mDecor 以后设置其焦点的获取方式为，当其子孙都不需要时，自己才获取。
             mDecor.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
             mDecor.setIsRootNamespace(true);
             if (!mInvalidatePanelMenuPosted && mInvalidatePanelMenuFeatures != 0) {
@@ -2694,6 +2706,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             mContentParent = generateLayout(mDecor);
 
             // Set up decor part of UI to ignore fitsSystemWindows if appropriate.
+            //如果合适，设置 UI 的decor部分以忽略 fitSystemWindows。
             mDecor.makeOptionalFitsSystemWindows();
 
             final DecorContentParent decorContentParent = (DecorContentParent) mDecor.findViewById(

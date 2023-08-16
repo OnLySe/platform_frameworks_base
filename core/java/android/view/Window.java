@@ -133,6 +133,8 @@ public abstract class Window {
      * Flag for requesting that window content changes should be animated using a
      * TransitionManager.
      *
+     * 用于请求窗口内容更改应使用 TransitionManager 进行动画处理的标志。
+     *
      * <p>The TransitionManager is set using
      * {@link #setTransitionManager(android.transition.TransitionManager)}. If none is set,
      * a default TransitionManager will be used.</p>
@@ -355,6 +357,8 @@ public abstract class Window {
          * implementation must call
          * {@link android.view.Window#superDispatchTouchEvent} to do the
          * standard touch screen processing.
+         *
+         * 调用以处理触摸屏事件。至少您的实现必须调用 superDispatchTouchEvent 来执行标准的触摸屏处理。
          *
          * @param event The touch screen event.
          *

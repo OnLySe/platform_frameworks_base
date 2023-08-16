@@ -857,7 +857,7 @@ public class Activity extends ContextThemeWrapper
     /* package */ NonConfigurationInstances mLastNonConfigurationInstances;
 
     @UnsupportedAppUsage
-    private Window mWindow;
+    private PhoneWindow mWindow;
 
     @UnsupportedAppUsage
     private WindowManager mWindowManager;
@@ -997,7 +997,7 @@ public class Activity extends ContextThemeWrapper
      * @return Window The current window, or null if the activity is not
      *         visual.
      */
-    public Window getWindow() {
+    public PhoneWindow getWindow() {
         return mWindow;
     }
 
