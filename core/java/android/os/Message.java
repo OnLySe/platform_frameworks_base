@@ -118,7 +118,10 @@ public final class Message implements Parcelable {
     /**
      * The targeted delivery time of this message. The time-base is
      * {@link SystemClock#uptimeMillis}.
+     * 此Message的目标传递时间。时基为SystemClock.uptimeMillis。
+     *
      * @hide Only for use within the tests.
+     * @hide 仅在测试中使用。
      */
     @UnsupportedAppUsage
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
