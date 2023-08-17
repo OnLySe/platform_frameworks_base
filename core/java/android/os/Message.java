@@ -309,8 +309,10 @@ public final class Message implements Parcelable {
      * </p>
      */
     public void recycle() {
+        //判断消息是否正在使用
         if (isInUse()) {
             if (gCheckRecycle) {
+                //Android 5.0以后的版本默认为true,之前的版本默认为false.
                 throw new IllegalStateException("This message cannot be recycled because it "
                         + "is still in use.");
             }
@@ -322,11 +324,15 @@ public final class Message implements Parcelable {
     /**
      * Recycles a Message that may be in-use.
      * Used internally by the MessageQueue and Looper when disposing of queued Messages.
+     *
+     * 对于不再使用的消息，加入到消息池
      */
     @UnsupportedAppUsage
     void recycleUnchecked() {
         // Mark the message as in use while it remains in the recycled object pool.
         // Clear out all other details.
+        //将消息标示位置为IN_USE，并清空消息所有的参数。
+
         flags = FLAG_IN_USE;
         what = 0;
         arg1 = 0;
@@ -342,8 +348,10 @@ public final class Message implements Parcelable {
 
         synchronized (sPoolSync) {
             if (sPoolSize < MAX_POOL_SIZE) {
+                //当消息池没有满时，将Message对象加入消息池
                 next = sPool;
                 sPool = this;
+                //消息池的可用大小进行加1操作
                 sPoolSize++;
             }
         }

@@ -98,15 +98,24 @@ public final class Looper {
       * this looper, before actually starting the loop. Be sure to call
       * {@link #loop()} after calling this method, and end it by calling
       * {@link #quit()}.
+     *
+     *  初始化当前线程的Looper
+     *  请确保在调用此方法后调用loop（），并通过调用quit（）结束它。
       */
     public static void prepare() {
         prepare(true);
     }
 
+    /**
+     * 初始化当前线程的Looper
+     * @param quitAllowed
+     */
     private static void prepare(boolean quitAllowed) {
+        // 每个线程只能执行一次 prepare()，否则会直接抛出异常
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
         }
+        // 创建Looper并将 Looper 存入 ThreadLocal。在Looper构造方法中创建MessageQueue
         sThreadLocal.set(new Looper(quitAllowed));
     }
 
@@ -115,8 +124,11 @@ public final class Looper {
      * application's main looper. The main looper for your application
      * is created by the Android environment, so you should never need
      * to call this function yourself.  See also: {@link #prepare()}
+     * 翻译：将当前线程初始化为 looper，将其标记为应用进程的主 looper。应用进程的主循环器是由 Android 环境创建的，
+     * 因此您永远不需要自己调用此函数。另请参阅：{@link #prepare()}
      */
     public static void prepareMainLooper() {
+        //主线程looper不允许退出，因为主线程需要源源不断的处理各种事件。子线程的looper则允许退出
         prepare(false);
         synchronized (Looper.class) {
             if (sMainLooper != null) {
@@ -149,15 +161,18 @@ public final class Looper {
      * {@link #quit()} to end the loop.
      */
     public static void loop() {
+        //获取TLS存储的Looper对象
         final Looper me = myLooper();
         if (me == null) {
             throw new RuntimeException("No Looper; Looper.prepare() wasn't called on this thread.");
         }
+        //获取Looper对象中的消息队列
         final MessageQueue queue = me.mQueue;
 
         // Make sure the identity of this thread is that of the local process,
         // and keep track of what that identity token actually is.
         Binder.clearCallingIdentity();
+        //确保在权限检查时基于本地进程，而不是调用进程。
         final long ident = Binder.clearCallingIdentity();
 
         // Allow overriding a threshold with a system prop. e.g.
@@ -170,14 +185,17 @@ public final class Looper {
 
         boolean slowDeliveryDetected = false;
 
+        //进入loop的主循环方法
         for (;;) {
-            Message msg = queue.next(); // might block
+            Message msg = queue.next(); // might block 可能会阻塞
             if (msg == null) {
                 // No message indicates that the message queue is quitting.
+                //没有消息，则退出循环
                 return;
             }
 
             // This must be in a local variable, in case a UI event sets the logger
+            // 默认为null，可通过setMessageLogging()方法来指定输出，用于debug功能
             final Printer logging = me.mLogging;
             if (logging != null) {
                 logging.println(">>>>> Dispatching to " + msg.target + " " +
@@ -211,6 +229,7 @@ public final class Looper {
             }
             long origWorkSource = ThreadLocalWorkSource.setUid(msg.workSourceUid);
             try {
+                //用于分发Message
                 msg.target.dispatchMessage(msg);
                 if (observer != null) {
                     observer.messageDispatched(token, msg);
@@ -251,6 +270,7 @@ public final class Looper {
 
             // Make sure that during the course of dispatching the
             // identity of the thread wasn't corrupted.
+            //恢复调用者信息
             final long newIdent = Binder.clearCallingIdentity();
             if (ident != newIdent) {
                 Log.wtf(TAG, "Thread identity changed from 0x"
@@ -259,7 +279,7 @@ public final class Looper {
                         + msg.target.getClass().getName() + " "
                         + msg.callback + " what=" + msg.what);
             }
-
+            //将Message放入消息池
             msg.recycleUnchecked();
         }
     }
@@ -295,6 +315,7 @@ public final class Looper {
     }
 
     private Looper(boolean quitAllowed) {
+        //消息队列实际上就是在Looper中初始化的
         mQueue = new MessageQueue(quitAllowed);
         mThread = Thread.currentThread();
     }

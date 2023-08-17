@@ -7326,6 +7326,7 @@ public final class ActivityThread extends ClientTransactionHandler {
 
         Process.setArgV0("<pre-initialized>");
 
+        //创建主线程的Looper
         Looper.prepareMainLooper();
 
         // Find the value for {@link #PROC_START_SEQ_IDENT} if provided on the command line.
@@ -7353,6 +7354,7 @@ public final class ActivityThread extends ClientTransactionHandler {
 
         // End of event ActivityThreadMain.
         Trace.traceEnd(Trace.TRACE_TAG_ACTIVITY_MANAGER);
+        //启动Looper
         Looper.loop();
 
         throw new RuntimeException("Main thread loop unexpectedly exited");

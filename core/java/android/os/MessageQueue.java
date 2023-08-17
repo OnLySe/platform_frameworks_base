@@ -334,6 +334,10 @@ public final class MessageQueue {
                 Binder.flushPendingCommands();
             }
 
+            // 阻塞方法，主要是通过 native 层的 epoll 监听文件描述符的写入事件来实现的。
+            // 如果 nextPollTimeoutMillis = -1，一直阻塞不会超时。
+            // 如果 nextPollTimeoutMillis = 0，不会阻塞，立即返回。
+            // 如果 nextPollTimeoutMillis > 0，最长阻塞nextPollTimeoutMillis毫秒(超时)，如果期间有程序唤醒会立即返回。
             nativePollOnce(ptr, nextPollTimeoutMillis);
 
             synchronized (this) {
@@ -348,6 +352,10 @@ public final class MessageQueue {
 
                     // 如果遇到同步屏障，则进入 do while 循环当中获取队列中第一条异步消息，也就是说如果是同步屏障则
                     // 取队列中第一条异步消息，否则取队列头消息（msg默认指向头结点）
+
+                    // msg.target == null表示此消息为消息屏障（通过postSyncBarrier方法发送来的）
+                    // 如果发现了一个消息屏障，会循环找出第一个异步消息（如果有异步消息的话），
+                    // 所有同步消息都将忽略（平常发送的一般都是同步消息）
                     do {
                         prevMsg = msg;
                         msg = msg.next;
@@ -357,7 +365,7 @@ public final class MessageQueue {
                 if (msg != null) {
                     if (now < msg.when) {
                         // Next message is not ready.  Set a timeout to wake up when it is ready.
-                        // 翻译：下一条消息未准备好。设置一个超时，以便在准备就绪时唤醒。
+                        // 翻译：下一条消息未准备好。设置一个超时时间（下一次轮询的超时时间），以便在准备就绪时唤醒。
 
                         // 对延迟信息与当前的时间间隔做了对比，判断是否已经到执行时间。如果没有到达执行时间则更新
                         // nextPollTimeoutMillis 的值
@@ -381,15 +389,18 @@ public final class MessageQueue {
                 } else {
                     // No more messages.
                     // 如果没有获取到消息则设置nextPollTimeoutMillis = -1，也就是说会进入阻塞等待让出CPU资源(当然在假设IdleHandler没有被设置的前提下)
+                    // (没有消息，会一直阻塞，直到被唤醒)
                     nextPollTimeoutMillis = -1;
                 }
 
                 // Process the quit message now that all pending messages have been handled.
+                //正在退出，则返回null
                 if (mQuitting) {
                     dispose();
                     return null;
                 }
 
+                //当消息队列为空，或者是消息队列的第一个消息时
                 // If first time idle, then get the number of idlers to run.
                 // Idle handles only run if the queue is empty or if the first message
                 // in the queue (possibly a barrier) is due to be handled in the future.
@@ -399,6 +410,7 @@ public final class MessageQueue {
                 }
                 if (pendingIdleHandlerCount <= 0) {
                     // No idle handlers to run.  Loop and wait some more.
+                    // 没有 idle handler 需要运行，继续循环等待
                     mBlocked = true;
                     continue;
                 }
@@ -411,6 +423,7 @@ public final class MessageQueue {
 
             // Run the idle handlers.
             // We only ever reach this code block during the first iteration.
+            // 只有第一次循环时才会执行下面的代码块
             for (int i = 0; i < pendingIdleHandlerCount; i++) {
                 final IdleHandler idler = mPendingIdleHandlers[i];
                 mPendingIdleHandlers[i] = null; // release the reference to the handler
@@ -430,10 +443,12 @@ public final class MessageQueue {
             }
 
             // Reset the idle handler count to 0 so we do not run them again.
+            // 将 pendingIdleHandlerCount 置零保证不再运行
             pendingIdleHandlerCount = 0;
 
             // While calling an idle handler, a new message could have been delivered
             // so go back and look again for a pending message without waiting.
+            //当调用一个空闲handler时，一个新message能够被分发，因此无需等待可以直接查询pending message.
             nextPollTimeoutMillis = 0;
         }
     }
@@ -445,13 +460,16 @@ public final class MessageQueue {
 
         synchronized (this) {
             if (mQuitting) {
+                //防止多次执行退出操作
                 return;
             }
             mQuitting = true;
 
             if (safe) {
+                //移除尚未触发的所有消息
                 removeAllFutureMessagesLocked();
             } else {
+                //移除所有的消息
                 removeAllMessagesLocked();
             }
 
@@ -562,6 +580,7 @@ public final class MessageQueue {
 
     boolean enqueueMessage(Message msg, long when) {
         if (msg.target == null) {
+            //msg必须要有target
             throw new IllegalArgumentException("Message must have a target.");
         }
         //判断消息是否正在被使用
@@ -572,7 +591,8 @@ public final class MessageQueue {
         //以下就是插入MessageQueue代码，可能是插入到头部，或者链表中间，包括尾部
         synchronized (this) {
             if (mQuitting) {
-                //MessageQueue已经退出，回收消息并返回false
+                //MessageQueue已经退出，回收消息放入消息池并返回false
+
                 IllegalStateException e = new IllegalStateException(
                         msg.target + " sending message to a Handler on a dead thread");
                 Log.w(TAG, e.getMessage(), e);
@@ -589,7 +609,8 @@ public final class MessageQueue {
             // 按消息的触发时间顺序插入队列
             if (p == null || when == 0 || when < p.when) {
                 // New head, wake up the event queue if blocked.
-                //满足以上任一需求，则表明该Message将成为链表的头节点
+                // p为null(代表MessageQueue没有消息） 或者msg的触发时间是队列中最早的， 则进入该该分支
+                // 满足以上任一需求，则表明该Message将成为链表的头节点
                 msg.next = p;
                 mMessages = msg;
                 needWake = mBlocked;
@@ -598,12 +619,12 @@ public final class MessageQueue {
                 // up the event queue unless there is a barrier at the head of the queue
                 // and the message is the earliest asynchronous message in the queue.
                 // 翻译：插入队列的中间。通常，我们不必唤醒事件队列，除非队列的开头有一个屏障，并且消息是队列中最早的异步消息。
-                // 以下代码就是将Message插入到链表中间。
-
                 //同时满足三个条件才会唤醒队列：
-                //  1队列是睡眠状态
-                //  2队列的第一条消息的 target 为空(Handler)
+                //  1 队列是睡眠状态
+                //  2 队列的第一条消息的 target 为空(Handler)
                 //  3 待插入的 msg 为异步消息
+
+                // 以下代码就是将Message插入到链表中间。
                 needWake = mBlocked && p.target == null && msg.isAsynchronous();
                 Message prev;
                 for (;;) {
@@ -623,6 +644,7 @@ public final class MessageQueue {
             }
 
             // We can assume mPtr != 0 because mQuitting is false.
+            //消息没有退出，我们认为此时mPtr != 0
             if (needWake) {
                 nativeWake(mPtr);
             }

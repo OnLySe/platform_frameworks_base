@@ -192,6 +192,7 @@ public class Handler {
      * @hide
      */
     public Handler(@Nullable Callback callback, boolean async) {
+        //匿名类、内部类或本地类都必须申明为static，否则会警告可能出现内存泄露
         if (FIND_POTENTIAL_LEAKS) {
             final Class<? extends Handler> klass = getClass();
             if ((klass.isAnonymousClass() || klass.isMemberClass() || klass.isLocalClass()) &&
@@ -200,16 +201,16 @@ public class Handler {
                     klass.getCanonicalName());
             }
         }
-
+        //必须先执行Looper.prepare()，才能获取Looper对象，否则为null.
         mLooper = Looper.myLooper();
         if (mLooper == null) {
             throw new RuntimeException(
                 "Can't create handler inside thread " + Thread.currentThread()
                         + " that has not called Looper.prepare()");
         }
-        mQueue = mLooper.mQueue;
-        mCallback = callback;
-        mAsynchronous = async;
+        mQueue = mLooper.mQueue; //消息队列，来自Looper对象
+        mCallback = callback;  //回调方法
+        mAsynchronous = async; //设置消息是否为异步处理方式
     }
 
     /**
@@ -880,6 +881,7 @@ public class Handler {
     }
 
     private static void handleCallback(Message message) {
+        //Message Runnable run()
         message.callback.run();
     }
 
