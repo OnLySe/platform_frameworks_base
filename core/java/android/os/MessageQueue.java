@@ -346,18 +346,18 @@ public final class MessageQueue {
                 Message prevMsg = null;
                 Message msg = mMessages;
                 if (msg != null && msg.target == null) {
-                    //同步屏障的前置：msg不为null且msg.target为null
+                    //msg.target == null表示此消息为消息屏障（通过postSyncBarrier方法发送来的）
                     // Stalled by a barrier.  Find the next asynchronous message in the queue.
                     // 翻译：被屏障挡住了。查找队列中的下一条异步消息。
 
-                    // 如果遇到同步屏障，则进入 do while 循环当中获取队列中第一条异步消息，也就是说如果是同步屏障则
-                    // 取队列中第一条异步消息，否则取队列头消息（msg默认指向头结点）
+                    // 如果遇到同步屏障，则进入 do while 循环当中获取队列中第一条异步消息，也就是说如果是同步屏障则取队列中第一条异步消息
 
                     // msg.target == null表示此消息为消息屏障（通过postSyncBarrier方法发送来的）
                     // 如果发现了一个消息屏障，会循环找出第一个异步消息（如果有异步消息的话），
                     // 所有同步消息都将忽略（平常发送的一般都是同步消息）
                     do {
                         prevMsg = msg;
+                        //如果消息队列里面没有消息或者没有异步消息，最后msg的值会为null
                         msg = msg.next;
                     } while (msg != null && !msg.isAsynchronous());
                 }

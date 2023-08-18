@@ -13947,6 +13947,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             if (li != null && li.mOnTouchListener != null
                     && (mViewFlags & ENABLED_MASK) == ENABLED
                     && li.mOnTouchListener.onTouch(this, event)) {
+                //会优先执行OnTouchListener回调，然后才是View的onTouchEvent()
                 result = true;
             }
 
@@ -13977,7 +13978,10 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
     }
 
     /**
+     * 返回此View是否可以接收点击事件。比如当前在播放动画
+     *
      * Returns whether this view can receive pointer events.
+     * 翻译：返回此View是否可以接收点击事件。
      *
      * @return {@code true} if this view can receive pointer events.
      * @hide
@@ -15357,6 +15361,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
                                     mPerformClick = new PerformClick();
                                 }
                                 if (!post(mPerformClick)) {
+                                    //内部会回调OnClickListener
                                     performClickInternal();
                                 }
                             }

@@ -4010,8 +4010,10 @@ public class Activity extends ContextThemeWrapper
             onUserInteraction();
         }
         if (getWindow().superDispatchTouchEvent(ev)) {
+            //superDispatchTouchEvent返回true表示事件已经被消费
             return true;
         }
+        //表示事件由Activity自己处理
         return onTouchEvent(ev);
     }
 

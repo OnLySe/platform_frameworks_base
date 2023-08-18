@@ -463,6 +463,7 @@ public final class Choreographer {
             } else {
                 Message msg = mHandler.obtainMessage(MSG_DO_SCHEDULE_CALLBACK, action);
                 msg.arg1 = callbackType;
+                //发送异步消息
                 msg.setAsynchronous(true);
                 mHandler.sendMessageAtTime(msg, dueTime);
             }

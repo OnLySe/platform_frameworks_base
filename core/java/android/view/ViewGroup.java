@@ -2602,10 +2602,18 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 resetTouchState();
             }
 
-            // Check for interception.
+            // Check for interception. 表示是否拦截的字段
             final boolean intercepted;
-            if (actionMasked == MotionEvent.ACTION_DOWN
-                    || mFirstTouchTarget != null) {
+            if (actionMasked == MotionEvent.ACTION_DOWN || mFirstTouchTarget != null) {
+                //当当前事件为按下事件（ACTION_DOWN）或者当已经消费过事件时，mFirstTouchTarget，两个条件满足其一
+
+                //当 ACTION_DOWN 事件时候，一定会执行到后面代码。当其他事件来的时候，要看当前 ViewGroup 是否消费
+                // 了事件，如果当前 viewgroup 已经消费了事件，没传到子 view，那么 mFirstTouchTarget字段就
+                // 为null，所以就不会执行到后面的代码，就直接消费掉所有事件了
+
+                //view一旦开始拦截，那么后续事件就全部就给它处理了，也不会执行onInterceptTouchEvent方法了(不会再进入该分支）
+
+                //FLAG_DISALLOW_INTERCEPT 标志是通过requestDisallowInterceptTouchEvent设置
                 final boolean disallowIntercept = (mGroupFlags & FLAG_DISALLOW_INTERCEPT) != 0;
                 if (!disallowIntercept) {
                     intercepted = onInterceptTouchEvent(ev);
@@ -2684,6 +2692,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
                             if (!child.canReceivePointerEvents()
                                     || !isTransformedTouchPointInView(x, y, child, null)) {
+                                //满足其中之一的条件就跳过这次循环
+                                //可以接收点击事件或者点击事件的坐标是不是在这个 view 的区域上面就都会执行进入这里
                                 ev.setTargetAccessibilityFocus(false);
                                 continue;
                             }
@@ -2697,6 +2707,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                             }
 
                             resetCancelNextUpFlag(child);
+                            //开始事件的层层传递，
                             if (dispatchTransformedTouchEvent(ev, false, child, idBitsToAssign)) {
                                 // Child wants to receive touch within its bounds.
                                 mLastTouchDownTime = ev.getDownTime();
@@ -2980,9 +2991,14 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     /**
+     * 返回true代表点击事件的坐标是不是在这个 view 的区域上面
+     *
      * Returns true if a child view contains the specified point when transformed
      * into its coordinate space.
+     * 翻译：如果子View在转换到其坐标空间时包含指定点，则返回true。
+     *
      * Child must not be null.
+     * 子View不能为null
      * @hide
      */
     @UnsupportedAppUsage
@@ -3016,6 +3032,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * Transforms a motion event into the coordinate space of a particular child view,
      * filters out irrelevant pointer ids, and overrides its action if necessary.
      * If child is null, assumes the MotionEvent will be sent to this ViewGroup instead.
+     * 翻译：将运动事件转换到特定子View的坐标空间中，过滤掉不相关的指针id，并在必要时覆盖其操作。如果child为null，则
+     * 假定MotionEvent将被发送到此ViewGroup。
      */
     private boolean dispatchTransformedTouchEvent(MotionEvent event, boolean cancel,
             View child, int desiredPointerIdBits) {
@@ -3029,6 +3047,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             if (child == null) {
                 handled = super.dispatchTouchEvent(event);
             } else {
+                //调用子View的分发事件方法
                 handled = child.dispatchTouchEvent(event);
             }
             event.setAction(oldAction);
