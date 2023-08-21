@@ -140,6 +140,16 @@ import java.util.concurrent.CountDownLatch;
  * and the WindowManager.  This is for the most part an internal implementation
  * detail of {@link WindowManagerGlobal}.
  *
+ * <p>翻译：视图层次结构的顶部，实现视图和WindowManager之间所需的协议。这在很大程度上是WindowManagerGlobal的内部实现细节。</p>
+ *
+ * viewRootImpl 是 window 和 view 之间的桥梁，viewRootImpl 可以处理两边的对象，然后联结起来
+ *
+ * <p>作用：
+ * <p>1 负责连接 view 和 window 的桥梁事务</p>
+ * <p>2 负责和 WindowManagerService 的联系</p>
+ * <p>3 负责管理和绘制 view 树</p>
+ * <p>4 事件的中转站</p>
+ *</p>
  * {@hide}
  */
 @SuppressWarnings({"EmptyCatchBlock", "PointlessBooleanExpression"})
@@ -304,6 +314,11 @@ public final class ViewRootImpl implements ViewParent,
     @UnsupportedAppUsage
     public final Context mContext;
 
+    /**
+     * mWindowSession 是一个 IWindowSession 对象，这里用了 AIDL 跨进程通信。IWindowSession 是一个 IBinder
+     * 接口，他的具体实现类在 WindowManagerService，本地的 mWindowSession只是一个 Binder 对象，通过这个
+     * mWindowSession 就可以直接调用 WMS 的方法进行跨进程通信。
+     */
     @UnsupportedAppUsage
     final IWindowSession mWindowSession;
     @NonNull Display mDisplay;
@@ -780,6 +795,8 @@ public final class ViewRootImpl implements ViewParent,
 
     /**
      * We have one child
+     *
+     * 可能是来自WindowManagerGlobal.addView()
      */
     public void setView(View view, WindowManager.LayoutParams attrs, View panelParentView) {
         synchronized (this) {
@@ -885,6 +902,7 @@ public final class ViewRootImpl implements ViewParent,
                     mOrigWindowType = mWindowAttributes.type;
                     mAttachInfo.mRecomputeGlobalAttributes = true;
                     collectViewAttributes();
+                    // 这里调用了windowSession的方法，调用wms的方法，把添加window的逻辑交给wms
                     res = mWindowSession.addToDisplay(mWindow, mSeq, mWindowAttributes,
                             getHostVisibility(), mDisplay.getDisplayId(), mTmpFrame,
                             mAttachInfo.mContentInsets, mAttachInfo.mStableInsets,

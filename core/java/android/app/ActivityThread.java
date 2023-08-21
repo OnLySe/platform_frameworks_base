@@ -3196,6 +3196,7 @@ public final class ActivityThread extends ClientTransactionHandler {
         }
 
         try {
+            // 这里创建Application
             Application app = r.packageInfo.makeApplication(false, mInstrumentation);
 
             if (localLOGV) Slog.v(TAG, "Performing launch of " + r);
@@ -3221,6 +3222,8 @@ public final class ActivityThread extends ClientTransactionHandler {
                     r.mPendingRemoveWindowManager = null;
                 }
                 appContext.setOuterContext(activity);
+                // 这里将window作为参数传到activity的attach方法中
+                // 一般情况下这里window==null
                 activity.attach(appContext, this, getInstrumentation(), r.token,
                         r.ident, app, r.intent, r.activityInfo, title, r.parent,
                         r.embeddedID, r.lastNonConfigurationInstances, config,
@@ -3239,6 +3242,7 @@ public final class ActivityThread extends ClientTransactionHandler {
                 }
 
                 activity.mCalled = false;
+                // 最后这里回调Activity的onCreate方法
                 if (r.isPersistable()) {
                     mInstrumentation.callActivityOnCreate(activity, r.state, r.persistentState);
                 } else {
@@ -3401,11 +3405,13 @@ public final class ActivityThread extends ClientTransactionHandler {
                 && (r.activityInfo.flags & ActivityInfo.FLAG_HARDWARE_ACCELERATED) != 0) {
             HardwareRenderer.preload();
         }
+        // 这里对WindowManagerGlobal进行初始化
         WindowManagerGlobal.initialize();
 
         // Hint the GraphicsEnvironment that an activity is launching on the process.
         GraphicsEnvironment.hintActivityLaunch();
 
+        // 启动Activity并回调activity的onCreate方法
         final Activity a = performLaunchActivity(r, customIntent);
 
         if (a != null) {
@@ -4234,6 +4240,7 @@ public final class ActivityThread extends ClientTransactionHandler {
         mSomeActivitiesChanged = true;
 
         // TODO Push resumeArgs into the activity for consideration
+        // 调用Activity的onResume方法
         final ActivityClientRecord r = performResumeActivity(token, finalStateRequest, reason);
         if (r == null) {
             // We didn't actually resume the activity, so skipping any follow-up actions.
@@ -4342,6 +4349,7 @@ public final class ActivityThread extends ClientTransactionHandler {
 
             r.activity.mVisibleFromServer = true;
             mNumVisibleActivities++;
+            // 让decorView显示到屏幕上
             if (r.activity.mVisibleFromClient) {
                 r.activity.makeVisible();
             }

@@ -425,6 +425,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         // decor, when theme attributes and the like are crystalized. Do not check the feature
         // before this happens.
         if (mContentParent == null) {
+            // 创建DecorView
             installDecor();
         } else if (!hasFeature(FEATURE_CONTENT_TRANSITIONS)) {
             mContentParent.removeAllViews();
@@ -435,11 +436,13 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                     getContext());
             transitionTo(newScene);
         } else {
+            // 这里根据布局id加载布局
             mLayoutInflater.inflate(layoutResID, mContentParent);
         }
         mContentParent.requestApplyInsets();
         final Callback cb = getCallback();
         if (cb != null && !isDestroyed()) {
+            // 回调activity的方法
             cb.onContentChanged();
         }
         mContentParentExplicitlySet = true;
@@ -2692,6 +2695,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
     private void installDecor() {
         mForceDecorInstall = false;
         if (mDecor == null) {
+            // 这里创建了DecorView
             mDecor = generateDecor(-1);
             //在得到 mDecor 以后设置其焦点的获取方式为，当其子孙都不需要时，自己才获取。
             mDecor.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
@@ -2703,6 +2707,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             mDecor.setWindow(this);
         }
         if (mContentParent == null) {
+            // 对DecorView进行初始化，得到ContentView
             mContentParent = generateLayout(mDecor);
 
             // Set up decor part of UI to ignore fitsSystemWindows if appropriate.

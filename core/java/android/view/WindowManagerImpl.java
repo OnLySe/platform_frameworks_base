@@ -92,6 +92,7 @@ public final class WindowManagerImpl implements WindowManager {
     @Override
     public void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
         applyDefaultToken(params);
+        //mGlobal是 WindowManagerGlobal，全局单例，是 WindowManager 接口的具体逻辑实现。桥接模式
         mGlobal.addView(view, params, mContext.getDisplay(), mParentWindow);
     }
 

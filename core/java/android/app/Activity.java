@@ -7734,8 +7734,10 @@ public class Activity extends ContextThemeWrapper
 
         mFragments.attachHost(null /*parent*/);
 
+        //创建 PhoneWindow
         mWindow = new PhoneWindow(this, window, activityConfigCallback);
         mWindow.setWindowControllerCallback(this);
+        // Activity 实现 window 的 callBack 接口，可以把自己设置给 window 当观察者。当 window 发生变化的时候可以通知 activity
         mWindow.setCallback(this);
         mWindow.setOnWindowDismissedCallback(this);
         mWindow.getLayoutInflater().setPrivateFactory(this);
@@ -7770,6 +7772,7 @@ public class Activity extends ContextThemeWrapper
             }
         }
 
+        // 这里初始化window的WindowManager对象
         mWindow.setWindowManager(
                 (WindowManager)context.getSystemService(Context.WINDOW_SERVICE),
                 mToken, mComponent.flattenToString(),

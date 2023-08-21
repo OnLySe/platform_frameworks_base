@@ -306,8 +306,16 @@ public final class WindowManagerGlobal {
         return null;
     }
 
+    /**
+     * 可能是来自WindowManagerImpl的addView()
+     * @param view
+     * @param params
+     * @param display
+     * @param parentWindow
+     */
     public void addView(View view, ViewGroup.LayoutParams params,
             Display display, Window parentWindow) {
+        //判断参数是否合法
         if (view == null) {
             throw new IllegalArgumentException("view must not be null");
         }
@@ -319,6 +327,7 @@ public final class WindowManagerGlobal {
         }
 
         final WindowManager.LayoutParams wparams = (WindowManager.LayoutParams) params;
+        // 如果不是子窗口，会对其做参数的调整
         if (parentWindow != null) {
             parentWindow.adjustLayoutParamsForSubWindow(wparams);
         } else {
@@ -374,15 +383,18 @@ public final class WindowManagerGlobal {
                 }
             }
 
+            // 这里新建了一个viewRootImpl，并设置参数
             root = new ViewRootImpl(view.getContext(), display);
 
             view.setLayoutParams(wparams);
 
+            // 添加到windowManagerGlobal的三个重要list中
             mViews.add(view);
             mRoots.add(root);
             mParams.add(wparams);
 
             // do this last because it fires off messages to start doing things
+            // 最后通过viewRootImpl来添加window
             try {
                 root.setView(view, wparams, panelParentView);
             } catch (RuntimeException e) {

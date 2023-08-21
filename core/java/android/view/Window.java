@@ -56,10 +56,13 @@ import java.util.List;
  * instance of this class should be used as the top-level view added to the
  * window manager. It provides standard UI policies such as a background, title
  * area, default key processing, etc.
+ * <p>翻译：顶级窗口外观和行为策略的抽象基类。此类的实例应用作添加到窗口管理器的顶级视图。它提供了标准的UI策略，如背景、标题区域、默认键处理等。
  *
  * <p>The only existing implementation of this abstract class is
  * android.view.PhoneWindow, which you should instantiate when needing a
  * Window.
+ *
+ * <p>翻译：这个抽象类的唯一现有实现是android.view.PhoneWindow，当需要Window时应该实例化它。
  */
 public abstract class Window {
     /** Flag for the "options panel" feature.  This is enabled by default. */
@@ -779,6 +782,7 @@ public abstract class Window {
         if (wm == null) {
             wm = (WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE);
         }
+        // 这里创建了windowManager
         mWindowManager = ((WindowManagerImpl)wm).createLocalWindowManager(this);
     }
 
