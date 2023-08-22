@@ -1731,6 +1731,7 @@ public final class ViewRootImpl implements ViewParent,
     void scheduleTraversals() {
         if (!mTraversalScheduled) {
             mTraversalScheduled = true;
+            //插入同步屏障
             mTraversalBarrier = mHandler.getLooper().getQueue().postSyncBarrier();
             mChoreographer.postCallback(
                     Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
@@ -1983,6 +1984,9 @@ public final class ViewRootImpl implements ViewParent,
         return (int) (displayMetrics.density * dip + 0.5f);
     }
 
+    /**
+     *
+     */
     private void performTraversals() {
         // cache mView since it is used so much below...
         final View host = mView;
@@ -3092,7 +3096,13 @@ public final class ViewRootImpl implements ViewParent,
         mLayoutRequested = true;    // ask wm for a new surface next time.
     }
 
+    /**
+     * 启动视图树的测量流程
+     * @param childWidthMeasureSpec
+     * @param childHeightMeasureSpec
+     */
     private void performMeasure(int childWidthMeasureSpec, int childHeightMeasureSpec) {
+        //这里mView指的是DecorView
         if (mView == null) {
             return;
         }

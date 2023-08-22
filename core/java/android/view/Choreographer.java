@@ -825,6 +825,7 @@ public final class Choreographer {
 
     @UnsupportedAppUsage
     private void scheduleVsyncLocked() {
+        // 请求一个 Vsync 信号的监听
         mDisplayEventReceiver.scheduleVsync();
     }
 
@@ -970,6 +971,9 @@ public final class Choreographer {
         }
     }
 
+    /**
+     * 单链表结构
+     */
     private final class CallbackQueue {
         private CallbackRecord mHead;
 
@@ -997,6 +1001,13 @@ public final class Choreographer {
             return callbacks;
         }
 
+        /**
+         * 会按时间顺序插入
+         *
+         * @param dueTime
+         * @param action
+         * @param token
+         */
         @UnsupportedAppUsage
         public void addCallbackLocked(long dueTime, Object action, Object token) {
             CallbackRecord callback = obtainCallbackLocked(dueTime, action, token);
