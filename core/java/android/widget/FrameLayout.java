@@ -179,6 +179,7 @@ public class FrameLayout extends ViewGroup {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int count = getChildCount();
 
+        //FrameLayout 的 layout_width 或 layout_height 是否设置了 wrap_content
         final boolean measureMatchParentChildren =
                 MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.EXACTLY ||
                 MeasureSpec.getMode(heightMeasureSpec) != MeasureSpec.EXACTLY;
@@ -188,11 +189,16 @@ public class FrameLayout extends ViewGroup {
         int maxWidth = 0;
         int childState = 0;
 
+        //遍历 measure 所有 childView
         for (int i = 0; i < count; i++) {
             final View child = getChildAt(i);
+            //mMeasureAllChildren 默认为 false，不予理会
+            //childView 只有不为 GONE 才需要 measure
             if (mMeasureAllChildren || child.getVisibility() != GONE) {
+                //去完成 childView 的 measure 操作，调用子View的measure()方法获得子View的测量结果并将其结果作为测量自身的依据之一。
                 measureChildWithMargins(child, widthMeasureSpec, 0, heightMeasureSpec, 0);
                 final LayoutParams lp = (LayoutParams) child.getLayoutParams();
+                //保存所有 childView 中的最大宽高值
                 maxWidth = Math.max(maxWidth,
                         child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin);
                 maxHeight = Math.max(maxHeight,
@@ -208,20 +214,24 @@ public class FrameLayout extends ViewGroup {
         }
 
         // Account for padding too
+        //需要考虑 padding 和 ForegroundPadding
         maxWidth += getPaddingLeftWithForeground() + getPaddingRightWithForeground();
         maxHeight += getPaddingTopWithForeground() + getPaddingBottomWithForeground();
 
         // Check against our minimum height and width
+        //需要考虑是否达到了设定的 Minimum 要求
         maxHeight = Math.max(maxHeight, getSuggestedMinimumHeight());
         maxWidth = Math.max(maxWidth, getSuggestedMinimumWidth());
 
         // Check against our foreground's minimum height and width
+        //需要考虑是否达到了 Foreground 的 Minimum 要求
         final Drawable drawable = getForeground();
         if (drawable != null) {
             maxHeight = Math.max(maxHeight, drawable.getMinimumHeight());
             maxWidth = Math.max(maxWidth, drawable.getMinimumWidth());
         }
 
+        //resolveSizeAndState 会根据 specMode 的类型来决定是选择 maxSize 还是 specSize
         setMeasuredDimension(resolveSizeAndState(maxWidth, widthMeasureSpec, childState),
                 resolveSizeAndState(maxHeight, heightMeasureSpec,
                         childState << MEASURED_HEIGHT_STATE_SHIFT));
@@ -260,6 +270,7 @@ public class FrameLayout extends ViewGroup {
                             lp.height);
                 }
 
+                //重新 measure
                 child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
             }
         }
@@ -299,6 +310,7 @@ public class FrameLayout extends ViewGroup {
                 final int absoluteGravity = Gravity.getAbsoluteGravity(gravity, layoutDirection);
                 final int verticalGravity = gravity & Gravity.VERTICAL_GRAVITY_MASK;
 
+                //考虑水平方向上的约束条件
                 switch (absoluteGravity & Gravity.HORIZONTAL_GRAVITY_MASK) {
                     case Gravity.CENTER_HORIZONTAL:
                         childLeft = parentLeft + (parentRight - parentLeft - width) / 2 +
@@ -314,6 +326,7 @@ public class FrameLayout extends ViewGroup {
                         childLeft = parentLeft + lp.leftMargin;
                 }
 
+                //考虑竖直方向上的约束条件
                 switch (verticalGravity) {
                     case Gravity.TOP:
                         childTop = parentTop + lp.topMargin;

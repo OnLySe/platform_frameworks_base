@@ -4137,6 +4137,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
+    /**
+     * 循环遍历所有 childView，使用同个 Canvas 对象来调用每个 childView 的draw方法，层层调用完成整个视图树的绘制
+     *
+     * @param canvas the canvas on which to draw the view
+     */
     @Override
     protected void dispatchDraw(Canvas canvas) {
         boolean usingRenderNodeProperties = canvas.isRecordingFor(mRenderNode);
@@ -6870,6 +6875,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * and margins. The child must have MarginLayoutParams The heavy lifting is
      * done in getChildMeasureSpec.
      *
+     * 在生成 childView 的 MeasureSpec 的时候会同时考虑 childView 是否设置了 margin，实际上还会用上 ViewGroup
+     * 的 padding 值。ViewGroup 必须先减去这两个属性值所占据的空间，剩余的空间才能用来容纳 childView。可以看到，
+     * 此时已经使用到 childView 的 LayoutParams了
+     *
      * @param child The child to measure
      * @param parentWidthMeasureSpec The width requirements for this view
      * @param widthUsed Extra space that has been used up by the parent
@@ -6883,9 +6892,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             int parentHeightMeasureSpec, int heightUsed) {
         final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
 
+        //去除水平方向上的padding和margin，得到剩下的“space”
         final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthMeasureSpec,
                 mPaddingLeft + mPaddingRight + lp.leftMargin + lp.rightMargin
                         + widthUsed, lp.width);
+        //去除竖直方向上的padding和margin，得到剩下的“space”
         final int childHeightMeasureSpec = getChildMeasureSpec(parentHeightMeasureSpec,
                 mPaddingTop + mPaddingBottom + lp.topMargin + lp.bottomMargin
                         + heightUsed, lp.height);
@@ -6916,6 +6927,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         int specMode = MeasureSpec.getMode(spec);
         int specSize = MeasureSpec.getSize(spec);
 
+        //父容器的空间需要先减去padding和margin后得到用来容纳childView的尺寸
         int size = Math.max(0, specSize - padding);
 
         int resultSize = 0;

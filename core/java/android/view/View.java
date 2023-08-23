@@ -2430,7 +2430,10 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
     static final int PFLAG_DRAWABLE_STATE_DIRTY        = 0x00000400;
     /** {@hide} */
     static final int PFLAG_MEASURED_DIMENSION_SET      = 0x00000800;
-    /** {@hide} */
+    /**
+     * 如果 View 的视图没有发生变化又没有设置该标记位的话就不会参与此次绘制流程。注意可能只是一小部分View发生变化需要刷新，需要通过此标记来判断
+     * {@hide}
+     */
     static final int PFLAG_FORCE_LAYOUT                = 0x00001000;
     /** {@hide} */
     static final int PFLAG_LAYOUT_REQUIRED             = 0x00002000;
@@ -22464,9 +22467,11 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
         int oldB = mBottom;
         int oldR = mRight;
 
+        //这里调用setFrame()确定View的大小和位置，也就是说在这里确定View的width和height
         boolean changed = isLayoutModeOptical(mParent) ?
                 setOpticalFrame(l, t, r, b) : setFrame(l, t, r, b);
 
+        //在measure()方法中可能会执行“mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;”，一次判断是否回调onLayout()
         if (changed || (mPrivateFlags & PFLAG_LAYOUT_REQUIRED) == PFLAG_LAYOUT_REQUIRED) {
             onLayout(changed, l, t, r, b);
 
@@ -22563,6 +22568,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
 
     /**
      * Assign a size and position to this view.
+     * 翻译：为此视图指定大小和位置。
      *
      * This is called from layout.
      *
@@ -22598,6 +22604,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             // Invalidate our old position
             invalidate(sizeChanged);
 
+            //将left、top、right、bottom等四个值保存到View相应的几个全局变量上，至此View的width和height才真正确定下来
             mLeft = left;
             mTop = top;
             mRight = right;
@@ -25008,10 +25015,12 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             mAttachInfo.mViewRequestingLayout = this;
         }
 
+        //设置强制布局的标记位
         mPrivateFlags |= PFLAG_FORCE_LAYOUT;
         mPrivateFlags |= PFLAG_INVALIDATED;
 
         if (mParent != null && !mParent.isLayoutRequested()) {
+            //触发父容器进行重新布局
             mParent.requestLayout();
         }
         if (mAttachInfo != null && mAttachInfo.mViewRequestingLayout == this) {
@@ -25065,6 +25074,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
         long key = (long) widthMeasureSpec << 32 | (long) heightMeasureSpec & 0xffffffffL;
         if (mMeasureCache == null) mMeasureCache = new LongSparseLongArray(2);
 
+        //通过PFLAG_FORCE_LAYOUT判断是否需要触发本次绘制流程
         final boolean forceLayout = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT;
 
         // Optimize layout by avoiding an extra EXACTLY pass when the view is
@@ -25106,6 +25116,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
                         + " setMeasuredDimension()");
             }
 
+            //在调用onMeasure()后设置标记，判断是否需要调用onLayout()方法
             mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;
         }
 
