@@ -761,6 +761,7 @@ public class LinearLayout extends ViewGroup {
     /**
      * Measures the children when the orientation of this LinearLayout is set
      * to {@link #VERTICAL}.
+     * 垂直方向的测量
      *
      * @param widthMeasureSpec Horizontal space requirements as imposed by the parent.
      * @param heightMeasureSpec Vertical space requirements as imposed by the parent.
@@ -778,6 +779,7 @@ public class LinearLayout extends ViewGroup {
         boolean allFillParent = true;
         float totalWeight = 0;
 
+        //获取垂直方向上的子View个数
         final int count = getVirtualChildCount();
 
         final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -795,6 +797,7 @@ public class LinearLayout extends ViewGroup {
         int nonSkippedChildCount = 0;
 
         // See how tall everyone is. Also remember max width.
+        //遍历子View获取其高度，并记录下子View中最高的高度数值
         for (int i = 0; i < count; ++i) {
             final View child = getVirtualChildAt(i);
             if (child == null) {
@@ -802,6 +805,8 @@ public class LinearLayout extends ViewGroup {
                 continue;
             }
 
+            // 子View不可见，直接跳过该View的measure过程，getChildrenSkipCount()返回值恒为0
+            // 注：若view的可见属性设置为VIEW.INVISIBLE，还是会计算该view大小
             if (child.getVisibility() == View.GONE) {
                i += getChildrenSkipCount(child, i);
                continue;
@@ -814,6 +819,7 @@ public class LinearLayout extends ViewGroup {
 
             final LayoutParams lp = (LayoutParams) child.getLayoutParams();
 
+            // 记录子View是否有weight属性设置，用于后面判断是否需要二次measure
             totalWeight += lp.weight;
 
             final boolean useExcessSpace = lp.height == 0 && lp.weight > 0;
@@ -821,6 +827,10 @@ public class LinearLayout extends ViewGroup {
                 // Optimization: don't bother measuring children who are only
                 // laid out using excess space. These views will get measured
                 // later if we have space to distribute.
+                // 如果LinearLayout的specMode为EXACTLY且子View设置了weight属性，在这里会跳过子View的measure过程
+                // 同时标记skippedMeasure属性为true，后面会根据该属性决定是否进行第二次measure
+                // 若LinearLayout的子View设置了weight，会进行两次measure计算，比较耗时
+                // 这就是为什么LinearLayout的子View需要使用weight属性时候，最好替换成RelativeLayout布局
                 final int totalLength = mTotalLength;
                 mTotalLength = Math.max(totalLength, totalLength + lp.topMargin + lp.bottomMargin);
                 skippedMeasure = true;
@@ -842,6 +852,7 @@ public class LinearLayout extends ViewGroup {
                 measureChildBeforeLayout(child, i, widthMeasureSpec, 0,
                         heightMeasureSpec, usedHeight);
 
+                //合并所有子View的尺寸大小,最终得到ViewGroup父视图的测量值（需自定义实现）
                 final int childHeight = child.getMeasuredHeight();
                 if (useExcessSpace) {
                     // Restore the original height and record how much space
@@ -851,7 +862,9 @@ public class LinearLayout extends ViewGroup {
                     consumedExcessSpace += childHeight;
                 }
 
+                // 1. mTotalLength用于存储LinearLayout在竖直方向的高度
                 final int totalLength = mTotalLength;
+                // 2. 每测量一个子View的高度， mTotalLength就会增加
                 mTotalLength = Math.max(totalLength, totalLength + childHeight + lp.topMargin +
                        lp.bottomMargin + getNextLocationOffset(child));
 
@@ -939,6 +952,8 @@ public class LinearLayout extends ViewGroup {
         }
 
         // Add in our padding
+        // 3. 记录LinearLayout占用的总高度
+        // 即除了子View的高度，还有LinearLayout本身的padding属性值
         mTotalLength += mPaddingTop + mPaddingBottom;
 
         int heightSize = mTotalLength;
@@ -1057,6 +1072,7 @@ public class LinearLayout extends ViewGroup {
         // Check against our minimum width
         maxWidth = Math.max(maxWidth, getSuggestedMinimumWidth());
 
+        //存储测量后View宽/高的值
         setMeasuredDimension(resolveSizeAndState(maxWidth, widthMeasureSpec, childState),
                 heightSizeAndState);
 

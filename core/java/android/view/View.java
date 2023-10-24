@@ -1897,6 +1897,8 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * Bit of {@link #getMeasuredWidthAndState()} and
      * {@link #getMeasuredWidthAndState()} that indicates the measured size
      * is smaller that the space the view would like to have.
+
+     * 用于表示测量的尺寸小于视图所希望的空间的标志位
      */
     public static final int MEASURED_STATE_TOO_SMALL = 0x01000000;
 
@@ -25224,6 +25226,8 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
 
     /**
      * Merge two states as returned by {@link #getMeasuredState()}.
+     * 合并由 getMeasuredState()返回的两个状态
+     *
      * @param curState The current state as returned from a view or the result
      * of combining multiple views.
      * @param newState The new view state to combine.
@@ -25265,8 +25269,13 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
         switch (specMode) {
             case MeasureSpec.AT_MOST:
                 if (specSize < size) {
+                    //当specMode为AT_MOST，并且父控件指定的尺寸specSize小于View自己想要的尺寸时，
+                    //我们就会用掩码MEASURED_STATE_TOO_SMALL向量算结果加入尺寸太小的标记
+                    //这样其父ViewGroup就可以通过该标记其给子View的尺寸太小了，
+                    //然后可能分配更大一点的尺寸给子View
                     result = specSize | MEASURED_STATE_TOO_SMALL;
                 } else {
+                    //View需要的size小于spec的size，此时父View的size是宽裕的，所以就可以直接该View所需要的size
                     result = size;
                 }
                 break;
