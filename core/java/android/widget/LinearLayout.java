@@ -680,6 +680,8 @@ public class LinearLayout extends ViewGroup {
      * {@link android.widget.TableLayout} and {@link android.widget.TableRow}
      * for an example.</p>
      *
+     * <p>翻译：返回子项的虚拟数。如果布局可以容纳虚拟子项，则此数字可能与实际子项数不同</p>
+     *
      * @return the virtual number of children
      */
     int getVirtualChildCount() {
@@ -849,9 +851,10 @@ public class LinearLayout extends ViewGroup {
                 // use all available space (and we will shrink things later
                 // if needed).
                 final int usedHeight = totalWeight == 0 ? mTotalLength : 0;
+                //该方法内部最终会调用measureChildren()
                 measureChildBeforeLayout(child, i, widthMeasureSpec, 0,
                         heightMeasureSpec, usedHeight);
-
+                //此时child对应的子View已经测量完成，可以拿到测量宽高
                 //合并所有子View的尺寸大小,最终得到ViewGroup父视图的测量值（需自定义实现）
                 final int childHeight = child.getMeasuredHeight();
                 if (useExcessSpace) {
@@ -901,8 +904,11 @@ public class LinearLayout extends ViewGroup {
                 matchWidthLocally = true;
             }
 
+            //获取子View的margin值，这里取水平方向的margin
             final int margin = lp.leftMargin + lp.rightMargin;
+            //取出该子View的测量宽度，加上水平方向的margin作为实际测得的子View宽度
             final int measuredWidth = child.getMeasuredWidth() + margin;
+            //对比每次循环拿到的子View的测量宽度，取最大值并更新，这样maxWidth的值就是所有子View中的宽度最大值
             maxWidth = Math.max(maxWidth, measuredWidth);
             childState = combineMeasuredStates(childState, child.getMeasuredState());
 
@@ -1541,6 +1547,7 @@ public class LinearLayout extends ViewGroup {
     /**
      * <p>Returns the size (width or height) that should be occupied by a null
      * child.</p>
+     * <p>翻译：返回应由 null 子项占用的大小（宽度或高度）。</p>
      *
      * @param childIndex the index of the null child
      * @return the width or height of the child depending on the orientation
@@ -1626,6 +1633,7 @@ public class LinearLayout extends ViewGroup {
         // Space available for child
         int childSpace = width - paddingLeft - mPaddingRight;
 
+        //返回子View数目
         final int count = getVirtualChildCount();
 
         final int majorGravity = mGravity & Gravity.VERTICAL_GRAVITY_MASK;
@@ -1648,11 +1656,13 @@ public class LinearLayout extends ViewGroup {
                break;
         }
 
+        //遍历子View
         for (int i = 0; i < count; i++) {
             final View child = getVirtualChildAt(i);
             if (child == null) {
                 childTop += measureNullChild(i);
             } else if (child.getVisibility() != GONE) {
+                //计算子View的测量宽 / 高值
                 final int childWidth = child.getMeasuredWidth();
                 final int childHeight = child.getMeasuredHeight();
 
@@ -1686,8 +1696,11 @@ public class LinearLayout extends ViewGroup {
                 }
 
                 childTop += lp.topMargin;
+                //确定自身子View的位置，递归调用子View的setChildFrame()，实际上是调用了子View的layout()
+                //这里要理解递归调用了setChildFrame()，因为子View可能是ViewGroup，直到单一View为止，这其实就是一种递归调用
                 setChildFrame(child, childLeft, childTop + getLocationOffset(child),
                         childWidth, childHeight);
+                // childTop逐渐增大，即后面的子元素会被放置在靠下的位置，这符合垂直方向的LinearLayout的特性
                 childTop += childHeight + lp.bottomMargin + getNextLocationOffset(child);
 
                 i += getChildrenSkipCount(child, i);
@@ -1841,7 +1854,13 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
+    /**
+     * 确定子View的大小和位置，这里会去调用子View的layout()方法
+     */
     private void setChildFrame(View child, int left, int top, int width, int height) {
+        // setChildFrame()仅仅只是调用了子View的layout()而已
+        // 在子View的layout()又通过调用setFrame（）确定View的四个顶点
+        // 即确定了子View的位置，如此不断循环确定所有子View的位置，最终确定ViewGroup的位置
         child.layout(left, top, left + width, top + height);
     }
 

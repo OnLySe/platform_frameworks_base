@@ -22464,17 +22464,21 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             mPrivateFlags3 &= ~PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT;
         }
 
+        // 当前视图的四个顶点
         int oldL = mLeft;
         int oldT = mTop;
         int oldB = mBottom;
         int oldR = mRight;
 
-        //这里调用setFrame()确定View的大小和位置，也就是说在这里确定View的width和height
+        //这里调用setFrame()/setOpticalFrame() 确定View的大小和位置，也就是说在这里确定View的width和height
         boolean changed = isLayoutModeOptical(mParent) ?
                 setOpticalFrame(l, t, r, b) : setFrame(l, t, r, b);
 
         //在measure()方法中可能会执行“mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;”，一次判断是否回调onLayout()
+        //如果发生变化changed为true，会重新确定该View所有的子View在父容器的位置：onLayout()
         if (changed || (mPrivateFlags & PFLAG_LAYOUT_REQUIRED) == PFLAG_LAYOUT_REQUIRED) {
+            // 对于单一View的layout过程：由于单一View是没有子View的，故onLayout()是一个空实现
+            // 对于ViewGroup的layout过程：由于确定位置与具体布局有关，所以onLayout()在ViewGroup为抽象方法，需自定义重写实现
             onLayout(changed, l, t, r, b);
 
             if (shouldDrawRoundScrollbar()) {
@@ -22571,6 +22575,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
     /**
      * Assign a size and position to this view.
      * 翻译：为此视图指定大小和位置。
+     * 根据传入的4个位置值，设置View本身的四个顶点位置，用来最终确定View本身的位置
      *
      * This is called from layout.
      *
@@ -22591,6 +22596,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
                     + right + "," + bottom + ")");
         }
 
+        //判断四个顶点的值是否发生变化
         if (mLeft != left || mRight != right || mTop != top || mBottom != bottom) {
             changed = true;
 

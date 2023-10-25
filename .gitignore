@@ -3,3 +3,4 @@
 *.sw*
 local.properties
 .gradle
+.DS_Store
