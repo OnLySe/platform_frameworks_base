@@ -16000,6 +16000,8 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
      * Called by draw to draw the child views. This may be overridden
      * by derived classes to gain control just before its children are drawn
      * (but after its own view has been drawn).
+     *
+     * 绘制子View。单一View没有子View，为空实现，不需要重写，ViewGroup则已经实现，一般也不需要重写
      * @param canvas the canvas on which to draw the view
      */
     protected void dispatchDraw(Canvas canvas) {
@@ -21947,10 +21949,22 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
 
     /**
      * Manually render this view (and all of its children) to the given Canvas.
+     * 根据给定的 Canvas 自动渲染View包括其所有子 View）。
      * The view must have already done a full layout before this function is
      * called.  When implementing a view, implement
      * {@link #onDraw(android.graphics.Canvas)} instead of overriding this method.
      * If you do need to override this method, call the superclass version.
+     *
+     * 绘制过程：
+     *   1. 绘制view背景
+     *   2. 绘制view内容
+     *   3. 绘制子View
+     *   4. 绘制装饰（渐变框，滑动条等等）
+     * 注：
+     *    a. 在调用该方法之前必须要完成 layout 过程
+     *    b. 所有的视图最终都是调用 View 的 draw()绘制视图（ ViewGroup 没有复写此方法）
+     *    c. 在自定义View时，不应该复写该方法，而是复写 onDraw(Canvas) 方法进行绘制
+     *    d. 若自定义的视图确实要复写该方法，那么需先调用 super.draw(canvas)完成系统的绘制，然后再进行自定义的绘制
      *
      * @param canvas The Canvas to which the View is rendered.
      */
@@ -21974,17 +21988,21 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
         // Step 1, draw the background, if needed
         int saveCount;
 
+        //绘制背景
         drawBackground(canvas);
 
+        // 若有必要，则保存图层（还有一个复原图层）
+        // 优化技巧：当不需绘制 Layer 时，“保存图层“和“复原图层“这两步会跳过
+        // 因此在绘制时，节省 layer 可以提高绘制效率
         // skip step 2 & 5 if possible (common case)
         final int viewFlags = mViewFlags;
         boolean horizontalEdges = (viewFlags & FADING_EDGE_HORIZONTAL) != 0;
         boolean verticalEdges = (viewFlags & FADING_EDGE_VERTICAL) != 0;
         if (!verticalEdges && !horizontalEdges) {
-            // Step 3, draw the content
+            // Step 3, draw the content 绘制View内容
             onDraw(canvas);
 
-            // Step 4, draw the children
+            // Step 4, draw the children 绘制子View
             dispatchDraw(canvas);
 
             drawAutofilledHighlight(canvas);
@@ -21994,7 +22012,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
                 mOverlay.getOverlayView().dispatchDraw(canvas);
             }
 
-            // Step 6, draw decorations (foreground, scrollbars)
+            // Step 6, draw decorations (foreground, scrollbars) 绘制装饰，如滑动条、前景色等等
             onDrawForeground(canvas);
 
             // Step 7, draw the default focus highlight
@@ -22099,10 +22117,10 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             scrollabilityCache.setFadeColor(solidColor);
         }
 
-        // Step 3, draw the content
+        // Step 3, draw the content 绘制View本身内容，默认为空实现，需要重写
         onDraw(canvas);
 
-        // Step 4, draw the children
+        // Step 4, draw the children 绘制子View。单一View没有子View，为空实现，不需要重写，ViewGroup则已经实现，也不需要重写
         dispatchDraw(canvas);
 
         // Step 5, draw the fade effect and restore layers
@@ -22172,7 +22190,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             mOverlay.getOverlayView().dispatchDraw(canvas);
         }
 
-        // Step 6, draw decorations (foreground, scrollbars)
+        // Step 6, draw decorations (foreground, scrollbars) 绘制装饰，如滑动条、前景色等等
         onDrawForeground(canvas);
 
         if (debugDraw()) {
@@ -22182,16 +22200,19 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
 
     /**
      * Draws the background onto the specified canvas.
+     * 绘制View本身的背景
      *
      * @param canvas Canvas on which to draw the background
      */
     @UnsupportedAppUsage
     private void drawBackground(Canvas canvas) {
+        // 获取背景 drawable
         final Drawable background = mBackground;
         if (background == null) {
             return;
         }
 
+        // 根据在 layout 过程中获取的 View 的位置参数，来设置背景的边界
         setBackgroundBounds();
 
         // Attempt to use a display list if requested.
@@ -22207,12 +22228,15 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
             }
         }
 
+        // 获取 mScrollX 和 mScrollY值
         final int scrollX = mScrollX;
         final int scrollY = mScrollY;
         if ((scrollX | scrollY) == 0) {
             background.draw(canvas);
         } else {
+            // 若 mScrollX 和 mScrollY 有值，则对 canvas 的坐标进行偏移
             canvas.translate(scrollX, scrollY);
+            // 调用 Drawable 的 draw 方法绘制背景
             background.draw(canvas);
             canvas.translate(-scrollX, -scrollY);
         }
@@ -23870,6 +23894,7 @@ public class View implements Drawable.Callback, KeyEvent.Callback,
 
     /**
      * Draw any foreground content for this view.
+     * 绘制前景，如滑动条、前景色等
      *
      * <p>Foreground content may consist of scroll bars, a {@link #setForeground foreground}
      * drawable or other view-specific decorations. The foreground is drawn on top of the

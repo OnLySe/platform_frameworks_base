@@ -6905,6 +6905,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     /**
+     * 根据父View的MeasureSpec和View本身的LayoutParams(这里是childDimension)来决定子View的MeasureSpec
      * Does the hard part of measureChildren: figuring out the MeasureSpec to
      * pass to a particular child. This method figures out the right MeasureSpec
      * for one dimension (height or width) of one child view.
@@ -6916,15 +6917,17 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * to be the same size as the parent, the parent should ask the child to
      * layout given an exact size.
      *
-     * @param spec The requirements for this view
+     * @param spec The requirements for this view 父View的MeasureSpec
      * @param padding The padding of this view for the current dimension and
-     *        margins, if applicable
+     *        margins, if applicable 包括了padding和margin
      * @param childDimension How big the child wants to be in the current
-     *        dimension
+     *        dimension 子View想要的尺寸
      * @return a MeasureSpec integer for the child
      */
     public static int getChildMeasureSpec(int spec, int padding, int childDimension) {
+        //父view的测量模式
         int specMode = MeasureSpec.getMode(spec);
+        //父view的大小
         int specSize = MeasureSpec.getSize(spec);
 
         //父容器的空间需要先减去padding和margin后得到用来容纳childView的尺寸
@@ -6935,24 +6938,34 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         switch (specMode) {
         // Parent has imposed an exact size on us
+        // 当父view的模式为EXACITY时，父view强加给子view确切的值
         case MeasureSpec.EXACTLY:
             if (childDimension >= 0) {
+                // 当子view的LayoutParams>0，即有确切的值
+                //子view大小为子自身所赋的值，模式大小为EXACTLY
                 resultSize = childDimension;
                 resultMode = MeasureSpec.EXACTLY;
             } else if (childDimension == LayoutParams.MATCH_PARENT) {
+                // 当子view的LayoutParams为MATCH_PARENT时(-1)
                 // Child wants to be our size. So be it.
+                //子view大小为父view大小，模式为EXACTLY
                 resultSize = size;
                 resultMode = MeasureSpec.EXACTLY;
             } else if (childDimension == LayoutParams.WRAP_CONTENT) {
+                // 当子view的LayoutParams为WRAP_CONTENT时(-2)
                 // Child wants to determine its own size. It can't be
                 // bigger than us.
+                //子view决定自己的大小，但最大不能超过父view，模式为AT_MOST
                 resultSize = size;
                 resultMode = MeasureSpec.AT_MOST;
             }
             break;
 
         // Parent has imposed a maximum size on us
+        // 当父view的模式为AT_MOST时，父view强加给子view一个最大的值。（一般是父view设置为wrap_content）
         case MeasureSpec.AT_MOST:
+            //判断逻辑同MeasureSpec.EXACTLY
+
             if (childDimension >= 0) {
                 // Child wants a specific size... so be it
                 resultSize = childDimension;
@@ -6971,19 +6984,25 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             break;
 
         // Parent asked to see how big we want to be
+        // 当父view的模式为UNSPECIFIED时，父容器不对view有任何限制，要多大给多大，多见于ListView、GridView
         case MeasureSpec.UNSPECIFIED:
             if (childDimension >= 0) {
                 // Child wants a specific size... let him have it
+                // 子view大小为子自身所赋的值
                 resultSize = childDimension;
                 resultMode = MeasureSpec.EXACTLY;
             } else if (childDimension == LayoutParams.MATCH_PARENT) {
                 // Child wants to be our size... find out how big it should
                 // be
+                // sUseZeroUnspecifiedMeasureSpec默认为false
+                // 因为父view为UNSPECIFIED，所以MATCH_PARENT的话子类大小为0
                 resultSize = View.sUseZeroUnspecifiedMeasureSpec ? 0 : size;
                 resultMode = MeasureSpec.UNSPECIFIED;
             } else if (childDimension == LayoutParams.WRAP_CONTENT) {
                 // Child wants to determine its own size.... find out how
                 // big it should be
+                // sUseZeroUnspecifiedMeasureSpec默认为false
+                // 因为父view为UNSPECIFIED，所以WRAP_CONTENT的话子类大小为0
                 resultSize = View.sUseZeroUnspecifiedMeasureSpec ? 0 : size;
                 resultMode = MeasureSpec.UNSPECIFIED;
             }
